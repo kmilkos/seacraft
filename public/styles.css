@@ -29,6 +29,30 @@
   --shadow: 0 4px 20px rgba(0, 0, 0, 0.35);
 }
 
+[data-theme="office-light"] {
+  --bg: #f3f5f8;
+  --surface: #ffffff;
+  --surface-alt: #e8ecf2;
+  --border: #d5dce6;
+  --text: #1b2430;
+  --text-muted: #5c687a;
+  --accent: #0f6cbd;
+  --accent-soft: rgba(15, 108, 189, 0.12);
+  --shadow: 0 4px 16px rgba(15, 35, 66, 0.06);
+}
+
+[data-theme="office-dark"] {
+  --bg: #13161d;
+  --surface: #1c202b;
+  --surface-alt: #252a38;
+  --border: #32394a;
+  --text: #edf1f7;
+  --text-muted: #9aa5b8;
+  --accent: #479ef5;
+  --accent-soft: rgba(71, 158, 245, 0.16);
+  --shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
 * { box-sizing: border-box; }
 
 html, body {

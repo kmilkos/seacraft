@@ -126,13 +126,16 @@
   }
 
   // Theme
+  const THEMES = ['light', 'dark', 'office-light', 'office-dark'];
   const savedTheme = localStorage.getItem('seacraft_theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
+  els.themeToggle.title = `Theme: ${savedTheme} (click to switch)`;
   els.themeToggle.onclick = () => {
     const cur = document.documentElement.getAttribute('data-theme');
-    const next = cur === 'dark' ? 'light' : 'dark';
+    const next = THEMES[(THEMES.indexOf(cur) + 1) % THEMES.length];
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('seacraft_theme', next);
+    els.themeToggle.title = `Theme: ${next} (click to switch)`;
   };
 
   els.menuToggle.onclick = () => els.sidebar.classList.toggle('open');
