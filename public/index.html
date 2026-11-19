@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SeaCraft — Synced Craft Workspace</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+  <link rel="manifest" href="/manifest.webmanifest" />
+  <meta name="theme-color" content="#e95420" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Left Sidebar (Seafile Libraries & File Tree) -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand-bar">
+        <div class="brand-logo" id="homeBtn" title="Library Overview">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 2L2 7l10 5 10-5-10-5z"/>
+            <path d="M2 17l10 5 10-5"/>
+            <path d="M2 12l10 5 10-5"/>
+          </svg>
+          <span>SeaCraft</span>
+        </div>
+        <button type="button" class="icon-btn" id="themeToggle" title="Toggle Light/Dark Theme" aria-label="Toggle Theme">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="5"/>
+            <path d="M12 1v2M12 21v2M4.22 4.22l1.42 1.42M18.36 18.36l1.42 1.42M1 12h2M21 12h2M4.22 19.78l1.42-1.42M18.36 5.64l1.42-1.42"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Search -->
+      <div class="search-box">
+        <input type="search" id="searchInput" placeholder="Search files & docs..." autocomplete="off" />
+        <div class="search-results hidden" id="searchResults"></div>
+      </div>
+
+      <!-- Libraries Section -->
+      <div class="sidebar-section">
+        <div class="section-header">
+          <span>Libraries</span>
+          <button type="button" class="icon-btn" id="newLibBtn" title="New Library">+</button>
+        </div>
+        <ul class="lib-list" id="libList"></ul>
+      </div>
+
+      <!-- Current Library Files -->
+      <div class="sidebar-section files-section">
+        <div class="section-header">
+          <span id="currentLibLabel">Files</span>
+          <div class="header-actions">
+            <button type="button" class="icon-btn" id="newFolderBtn" title="New Folder">📁+</button>
+            <button type="button" class="icon-btn" id="uploadBtn" title="Upload Local File">⇪</button>
+            <input type="file" id="uploadInput" class="hidden" />
+          </div>
+        </div>
+        <div class="dir-crumb" id="dirCrumb"></div>
+        <ul class="file-list" id="fileList"></ul>
+      </div>
+
+      <!-- Sync Status Footer -->
+      <button type="button" class="sync-footer" id="syncStatusBtn">
+        <span class="sync-dot" id="syncDot"></span>
+        <div class="sync-meta">
+          <strong id="syncLabel">Sync: Checking...</strong>
+          <small id="syncSub">Click for Seafile &amp; Client settings</small>
+        </div>
+      </button>
+    </aside>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button type="button" class="icon-btn mobile-menu-btn" id="menuToggle" aria-label="Toggle Sidebar">☰</button>
+          <div class="breadcrumb" id="docBreadcrumb">My Workspace</div>
+        </div>
+        <div class="topbar-actions" id="docActions">
+          <span class="save-badge" id="saveBadge">Ready</span>
+          <button type="button" class="btn btn-ghost hidden" id="historyBtn" title="Version History (.history)">History</button>
+          <button type="button" class="btn btn-ghost hidden" id="printDocBtn" title="Print Document">🖨️ Print</button>
+          <button type="button" class="btn btn-ghost hidden" id="downloadBtn" title="Download for local use">Download</button>
+          <button type="button" class="btn btn-primary hidden" id="saveBtn" title="Save (Ctrl+S)">Save</button>
+        </div>
+      </header>
+
+      <!-- Workspace Content Area -->
+      <div class="editor-stage" id="editorStage">
+        <!-- Rendered dynamically by app.js / wordcraft.js / gridcraft.js / boardcraft.js -->
+      </div>
+    </main>
+  </div>
+
+  <!-- Create New Item Dialog -->
+  <dialog id="createDialog" aria-labelledby="createDialogTitle">
+    <form method="dialog" class="modal-form" id="createForm">
+      <h3 id="createDialogTitle">Create New</h3>
+      <input type="hidden" id="createKind" />
+      <label class="field">
+        <span>Name</span>
+        <input type="text" id="createNameInput" required placeholder="Enter name..." />
+      </label>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="createCancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary">Create</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Version History Dialog -->
+  <dialog id="historyDialog" aria-labelledby="historyDialogTitle">
+    <div class="modal-form modal-wide">
+      <div class="modal-header">
+        <h3 id="historyDialogTitle">Version History (.history)</h3>
+        <button type="button" class="icon-btn" id="historyCloseBtn">✕</button>
+      </div>
+      <p class="muted">Every save automatically preserves a snapshot for rollback.</p>
+      <ul class="history-list" id="historyList"></ul>
+    </div>
+  </dialog>
+
+  <!-- Sync & Seafile Settings Dialog -->
+  <dialog id="syncDialog" aria-labelledby="syncDialogTitle">
+    <form method="dialog" class="modal-form modal-wide" id="syncForm">
+      <div class="modal-header">
+        <h3 id="syncDialogTitle">Seafile Sync &amp; Local Client</h3>
+        <button type="button" class="icon-btn" id="syncCloseBtn">✕</button>
+      </div>
+      <div class="sync-stats-box" id="syncStatsBox"></div>
+      <label class="field">
+        <span>Seafile Server URL (optional — leave blank for Local Sync Mode)</span>
+        <input type="url" id="seafileServerInput" placeholder="https://cloud.seafile.com" />
+      </label>
+      <div class="field-row">
+        <label class="field">
+          <span>Library / Repo ID</span>
+          <input type="text" id="seafileRepoInput" placeholder="e.g. 8a2c4f..." />
+        </label>
+        <label class="field">
+          <span>Poll Interval (ms)</span>
+          <input type="number" id="seafileIntervalInput" min="5000" step="1000" value="30000" />
+        </label>
+      </div>
+      <label class="field">
+        <span>Seafile API Token (leave blank to keep existing)</span>
+        <input type="password" id="seafileTokenInput" placeholder="Token..." autocomplete="new-password" />
+      </label>
+      <div class="field">
+        <span>Recent Sync Daemon Logs</span>
+        <pre class="sync-logs" id="syncLogsPre"></pre>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="syncNowBtn">Sync Now</button>
+        <button type="submit" class="btn btn-primary">Save Settings</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Scanner & OCR Dialog -->
+  <dialog id="scannerDialog" aria-labelledby="scannerDialogTitle">
+    <form method="dialog" class="modal-form modal-wide" id="scannerForm">
+      <div class="modal-header">
+        <h3 id="scannerDialogTitle">📠 Scanner &amp; OCR (eSCL / Image)</h3>
+        <button type="button" class="icon-btn" id="scannerCloseBtn">✕</button>
+      </div>
+      <div class="sync-stats-box" id="scannerStatusBox">Checking scanner status...</div>
+      <div class="field-row">
+        <label class="field">
+          <span>Scanner IP (eSCL / AirScan)</span>
+          <input type="text" id="scannerIpInput" value="192.168.1.149" />
+        </label>
+        <div class="field" style="justify-content:flex-end; flex-direction:row; align-items:flex-end; gap:6px;">
+          <button type="button" class="btn" id="scannerProbeBtn">Check</button>
+          <button type="button" class="btn" id="scannerDiscoverBtn">Discover LAN</button>
+        </div>
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>Source</span>
+          <select id="scannerSourceSelect" style="padding:8px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+            <option value="hardware">Hardware Flatbed (eSCL)</option>
+            <option value="upload">Upload Image / Camera (OCR)</option>
+          </select>
+        </label>
+        <label class="field">
+          <span>Save As Format</span>
+          <select id="scannerFormatSelect" style="padding:8px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+            <option value="docx">WordCraft (.docx + OCR)</option>
+            <option value="xlsx">GridCraft (.xlsx + OCR)</option>
+            <option value="pdf">Searchable PDF (.pdf)</option>
+            <option value="png">Image (.png)</option>
+            <option value="jpg">Image (.jpg)</option>
+          </select>
+        </label>
+      </div>
+      <div class="field hidden" id="scannerUploadField">
+        <span>Select Image / PDF for OCR</span>
+        <input type="file" id="scannerFileInput" accept="image/*,.pdf" />
+      </div>
+      <div class="field-row">
+        <label class="field">
+          <span>DPI / OCR Language</span>
+          <div style="display:flex; gap:6px;">
+            <select id="scannerDpiSelect" style="flex:1; padding:8px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+              <option value="150">150 DPI</option>
+              <option value="300" selected>300 DPI</option>
+              <option value="600">600 DPI</option>
+            </select>
+            <select id="scannerLangSelect" style="flex:1; padding:8px; border-radius:7px; border:1px solid var(--border); background:var(--bg); color:var(--text);">
+              <option value="ell+eng" selected>Greek + English</option>
+              <option value="eng">English</option>
+              <option value="ell">Greek</option>
+            </select>
+          </div>
+        </label>
+        <label class="field">
+          <span>Filename (optional)</span>
+          <input type="text" id="scannerFilenameInput" placeholder="e.g. Invoice_Scan" />
+        </label>
+      </div>
+      <pre class="sync-logs hidden" id="scannerResultPre"></pre>
+      <div class="modal-actions">
+        <button type="button" class="btn btn-ghost" id="scannerCancelBtn">Close</button>
+        <button type="submit" class="btn btn-primary" id="scannerRunBtn">Scan &amp; Save to Library</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Printer Dialog -->
+  <dialog id="printerDialog" aria-labelledby="printerDialogTitle">
+    <form method="dialog" class="modal-form modal-wide" id="printerForm">
+      <div class="modal-header">
+        <h3 id="printerDialogTitle">🖨️ Network Printer (IPP &amp; Browser)</h3>
+        <button type="button" class="icon-btn" id="printerCloseBtn">✕</button>
+      </div>
+      <div class="sync-stats-box" id="printerStatusBox">Checking printer IPP status...</div>
+      <div class="field-row">
+        <label class="field">
+          <span>Printer IP (Port 631 IPP)</span>
+          <input type="text" id="printerIpInput" value="192.168.1.149" />
+        </label>
+        <div class="field" style="justify-content:flex-end; flex-direction:row; align-items:flex-end;">
+          <button type="button" class="btn" id="printerProbeBtn">Check IPP Status</button>
+        </div>
+      </div>
+      <div class="field">
+        <span>File to Print via IPP (.pdf, .jpg, .png, .txt)</span>
+        <input type="text" id="printerFilePathInput" placeholder="Open a file or enter library path..." readonly />
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" id="browserPrintBtn">Browser Print (Any View)</button>
+        <button type="submit" class="btn btn-primary" id="ippPrintBtn">Send to Network Printer (IPP)</button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- All Apps Launcher Dialog -->
+  <dialog id="appsDialog" aria-labelledby="appsDialogTitle">
+    <div class="modal-form modal-launcher">
+      <div class="modal-header">
+        <h3 id="appsDialogTitle">All Craft Apps &amp; Devices</h3>
+        <button type="button" class="icon-btn" id="appsCloseBtn">✕</button>
+      </div>
+      <input type="search" id="appsFilterInput" placeholder="Filter apps (e.g. pdf, photo, video, print)..." autocomplete="off" class="apps-filter-input" />
+      <div id="appsModalBody" class="apps-modal-body"></div>
+    </div>
+  </dialog>
+
+  <script src="/boardcraft.js"></script>
+  <script src="/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+</body>
+</html>

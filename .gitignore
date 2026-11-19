@@ -1,0 +1,10 @@
+node_modules/
+storage/
+public/apps/
+config.json
+sync_state.json
+__pycache__/
+*.pyc
+*.log
+*.bak
+.DS_Store

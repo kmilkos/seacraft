@@ -1,0 +1,9 @@
+{
+  "seafileServer": "",
+  "seafileToken": "",
+  "repoId": "",
+  "syncIntervalMs": 30000,
+  "localLibrary": "CraftOffice",
+  "storageDir": "/outer/CraftOffice",
+  "deviceIp": "192.168.1.149"
+}

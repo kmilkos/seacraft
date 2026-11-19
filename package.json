@@ -1,0 +1,15 @@
+{
+  "name": "seacraft",
+  "version": "1.0.0",
+  "description": "Seafile-backed workspace portal with integrated ArtCraft (storytold) Rust/WASM apps, eSCL OCR scanning, and IPP printing.",
+  "main": "portal_server.js",
+  "scripts": {
+    "start": "node portal_server.js",
+    "sync": "node sync_client.js",
+    "install:apps": "python3 scripts/install_craft_apps.py"
+  },
+  "license": "Apache-2.0",
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
