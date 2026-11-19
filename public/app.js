@@ -82,7 +82,16 @@
     appsDialog: document.getElementById('appsDialog'),
     appsCloseBtn: document.getElementById('appsCloseBtn'),
     appsFilterInput: document.getElementById('appsFilterInput'),
-    appsModalBody: document.getElementById('appsModalBody')
+    appsModalBody: document.getElementById('appsModalBody'),
+    openSettingsBtn: document.getElementById('openSettingsBtn'),
+    settingsDialog: document.getElementById('settingsDialog'),
+    settingsCloseBtn: document.getElementById('settingsCloseBtn'),
+    settingsForm: document.getElementById('settingsForm'),
+    settingsDeviceIp: document.getElementById('settingsDeviceIp'),
+    settingsThemeSelect: document.getElementById('settingsThemeSelect'),
+    settingsViewSelect: document.getElementById('settingsViewSelect'),
+    settingsStorageDir: document.getElementById('settingsStorageDir'),
+    settingsOpenSyncBtn: document.getElementById('settingsOpenSyncBtn')
   };
 
   async function api(url, opts = {}) {
@@ -985,6 +994,45 @@
       els.ippPrintBtn.disabled = false;
       els.ippPrintBtn.textContent = 'Send to Network Printer (IPP)';
     }
+  };
+
+  // General Settings Modal
+  els.openSettingsBtn.onclick = async () => {
+    els.sidebar.classList.remove('open');
+    try {
+      const cfg = await api('/api/settings');
+      els.settingsDeviceIp.value = cfg.deviceIp || '192.168.1.149';
+      els.settingsStorageDir.value = cfg.storageDir || '/outer/CraftOffice';
+    } catch {}
+    els.settingsThemeSelect.value = document.documentElement.getAttribute('data-theme') || 'light';
+    els.settingsViewSelect.value = localStorage.getItem('seacraft_view_mode') || 'list';
+    els.settingsDialog.showModal();
+  };
+  els.settingsCloseBtn.onclick = () => els.settingsDialog.close();
+  els.settingsOpenSyncBtn.onclick = async () => {
+    els.settingsDialog.close();
+    await refreshSyncStatus(true);
+    els.syncDialog.showModal();
+  };
+  els.settingsForm.onsubmit = async (e) => {
+    e.preventDefault();
+    const theme = els.settingsThemeSelect.value;
+    const viewMode = els.settingsViewSelect.value;
+    const deviceIp = els.settingsDeviceIp.value.trim();
+
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('seacraft_theme', theme);
+    localStorage.setItem('seacraft_view_mode', viewMode);
+    if (deviceIp) {
+      els.scannerIpInput.value = deviceIp;
+      els.printerIpInput.value = deviceIp;
+    }
+    await api('/api/settings', {
+      method: 'POST',
+      body: JSON.stringify({ deviceIp })
+    });
+    els.settingsDialog.close();
+    if (!state.openFile) renderHome();
   };
 
   // Init

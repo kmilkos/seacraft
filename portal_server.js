@@ -514,6 +514,29 @@ async function handleApi(req, res, urlObj) {
     return sendJson(res, 200, { ok: true });
   }
 
+  // General Settings
+  if (pathname === '/api/settings' && req.method === 'GET') {
+    let cfg = {};
+    try { cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {}
+    return sendJson(res, 200, {
+      deviceIp: cfg.deviceIp || '192.168.1.149',
+      localLibrary: cfg.localLibrary || 'CraftOffice',
+      storageDir: cfg.storageDir || MAIN_STORAGE_DIR,
+      syncIntervalMs: cfg.syncIntervalMs || 30000
+    });
+  }
+
+  if (pathname === '/api/settings' && req.method === 'POST') {
+    const body = JSON.parse((await readBody(req)).toString('utf8') || '{}');
+    let cfg = {};
+    try { cfg = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf8')); } catch {}
+    if (typeof body.deviceIp === 'string' && body.deviceIp.trim()) cfg.deviceIp = body.deviceIp.trim();
+    if (typeof body.localLibrary === 'string' && body.localLibrary.trim()) cfg.localLibrary = body.localLibrary.trim();
+    if (Number(body.syncIntervalMs) >= 5000) cfg.syncIntervalMs = Number(body.syncIntervalMs);
+    fs.writeFileSync(CONFIG_PATH, JSON.stringify(cfg, null, 2));
+    return sendJson(res, 200, { ok: true });
+  }
+
   // Scanner & Printer (from Craft-Office engine + IPP)
   if (pathname === '/api/scanner/status' && req.method === 'GET') {
     const ip = (urlObj.searchParams.get('ip') || getDeviceIp()).trim();
