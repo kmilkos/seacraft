@@ -5,19 +5,33 @@ APP_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "=== SeaCraft Installer ==="
 echo "Install directory: $APP_DIR"
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "Error: Node.js (>=20) is required." >&2
-  exit 1
+NODE_MAJOR=0
+if command -v node >/dev/null 2>&1; then
+  NODE_MAJOR="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
 fi
-if ! command -v python3 >/dev/null 2>&1; then
-  echo "Error: Python 3 is required." >&2
-  exit 1
+
+if [ "$NODE_MAJOR" -lt 20 ]; then
+  if command -v apt-get >/dev/null 2>&1 && [ "$(id -u)" -eq 0 ]; then
+    echo "[0/5] Installing Node.js 24 LTS via NodeSource (found v$NODE_MAJOR)..."
+    apt-get update -qq
+    apt-get install -y -qq curl ca-certificates
+    curl -fsSL https://deb.nodesource.com/setup_24.x | bash -
+    apt-get install -y -qq nodejs
+  else
+    echo "Error: Node.js (>=20) is required (found v$NODE_MAJOR). Run as root on Debian/Ubuntu to auto-install." >&2
+    exit 1
+  fi
 fi
 
 if command -v apt-get >/dev/null 2>&1 && [ "$(id -u)" -eq 0 ]; then
-  echo "[1/5] Checking OS packages (tesseract-ocr, sane-airscan, python3-pil)..."
+  echo "[1/5] Checking OS packages (python3, tesseract-ocr, sane-airscan, python3-pil)..."
   apt-get update -qq || true
-  apt-get install -y -qq tesseract-ocr tesseract-ocr-ell tesseract-ocr-eng sane-airscan python3-pil || true
+  apt-get install -y -qq python3 tesseract-ocr tesseract-ocr-ell tesseract-ocr-eng sane-airscan python3-pil || true
+fi
+
+if ! command -v python3 >/dev/null 2>&1; then
+  echo "Error: Python 3 is required." >&2
+  exit 1
 fi
 
 echo "[2/5] Preparing config & storage directories..."
